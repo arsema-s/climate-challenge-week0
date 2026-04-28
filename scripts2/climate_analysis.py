@@ -14,7 +14,14 @@ logging.basicConfig(level=logging.INFO)
 def process_file(file_path):
     # Load data
     logging.info(f"Loading file: {file_path}")
-    df = pd.read_csv(file_path)
+    try:
+        df = pd.read_csv(file_path)
+    except FileNotFoundError:
+        logging.error(f"File not found: {file_path}")
+        return None
+    except Exception as e:
+        logging.error(f"Error loading file {file_path}: {e}")
+        return None
 
     # Extract country dynamically
     country = os.path.basename(file_path).replace(".csv", "")
@@ -49,12 +56,17 @@ def process_all_files(data_folder):
     all_dfs = []
 
     for file in os.listdir(data_folder):
+        if not all_dfs:
+            logging.error("No valid data files processed.")
+            return None
+        
         if file.endswith(".csv") and "clean" not in file:
             logging.info(f"Processing file: {file}")
 
             file_path = os.path.join(data_folder, file)
             df = process_file(file_path)
-            all_dfs.append(df)
+            if df is not None:
+                all_dfs.append(df)
 
     final_df = pd.concat(all_dfs, ignore_index=True)
     return final_df
@@ -91,7 +103,16 @@ if __name__ == "__main__":
     data_folder = args.input
     output_file = args.output
 
-    final_df = process_all_files(data_folder)
-    save_output(final_df, output_file)
+    try:
+        final_df = process_all_files(data_folder)
+
+        if final_df is not None:
+            save_output(final_df, output_file)
+            logging.info(f"Processing complete. File saved to: {output_file}")
+        else:
+            logging.error("Processing failed. No output generated.")
+
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
 
     logging.info(f"Processing complete. File saved to: {output_file}")
