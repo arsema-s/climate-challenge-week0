@@ -3,11 +3,17 @@ import numpy as np
 import os
 from scipy import stats
 
+import argparse
+
+import logging
+logging.basicConfig(level=logging.INFO)
+
 
 # The function below processes one file
 
 def process_file(file_path):
     # Load data
+    logging.info(f"Loading file: {file_path}")
     df = pd.read_csv(file_path)
 
     # Extract country dynamically
@@ -44,8 +50,9 @@ def process_all_files(data_folder):
 
     for file in os.listdir(data_folder):
         if file.endswith(".csv") and "clean" not in file:
-            file_path = os.path.join(data_folder, file)
+            logging.info(f"Processing file: {file}")
 
+            file_path = os.path.join(data_folder, file)
             df = process_file(file_path)
             all_dfs.append(df)
 
@@ -59,11 +66,32 @@ def save_output(df, output_path):
     df.to_csv(output_path, index=False)
 
 
+# if __name__ == "__main__":
+#     data_folder = "data"
+#     output_file = "data/all_countries_clean.csv"
+
+#     final_df = process_all_files(data_folder)
+#     save_output(final_df, output_file)
+
+#     print("Processing complete. File saved to:", output_file)
+
 if __name__ == "__main__":
-    data_folder = "data"
-    output_file = "data/all_countries_clean.csv"
+    parser = argparse.ArgumentParser(description="Climate data processing script")
+
+    # parser.add_argument("input_folder", help="Path to folder containing CSV files")
+    # parser.add_argument("output_file", help="Path to save cleaned dataset")
+    parser.add_argument("--input", default="data", help="Input folder")
+    parser.add_argument("--output", default="data/output.csv", help="Output file")
+
+
+    args = parser.parse_args()
+
+    # data_folder = args.input_folder
+    # output_file = args.output_file
+    data_folder = args.input
+    output_file = args.output
 
     final_df = process_all_files(data_folder)
     save_output(final_df, output_file)
 
-    print("Processing complete. File saved to:", output_file)
+    logging.info(f"Processing complete. File saved to: {output_file}")
