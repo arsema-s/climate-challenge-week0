@@ -53,20 +53,34 @@ def process_file(file_path):
 # The function below processes all files
 
 def process_all_files(data_folder):
+    import os
+    import pandas as pd
+
     all_dfs = []
 
     for file in os.listdir(data_folder):
-        if not all_dfs:
-            logging.error("No valid data files processed.")
-            return None
-        
-        if file.endswith(".csv") and "clean" not in file:
-            logging.info(f"Processing file: {file}")
+        if not file.endswith(".csv"):
+            continue
 
-            file_path = os.path.join(data_folder, file)
-            df = process_file(file_path)
-            if df is not None:
-                all_dfs.append(df)
+        file_path = os.path.join(data_folder, file)
+
+        try:
+            df = pd.read_csv(file_path)
+
+            required_cols = ["YEAR", "DOY", "T2M"]
+            if not all(col in df.columns for col in required_cols):
+                print(f"Skipping {file} — missing required columns")
+                continue
+
+            df["Country"] = file.replace(".csv", "")
+            all_dfs.append(df)
+
+        except Exception as e:
+            print(f"Error processing {file}: {e}")
+            continue
+
+    if not all_dfs:
+        raise ValueError("No valid data files were processed.")
 
     final_df = pd.concat(all_dfs, ignore_index=True)
     return final_df
